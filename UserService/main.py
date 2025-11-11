@@ -1,5 +1,6 @@
 # python import 
 import os
+from re import A
 from typing import Annotated
 
 # library import 
@@ -22,6 +23,12 @@ async def create_user(user_data: CreateUserSchema, db: Annotated[Session, Depend
     response = await user_service.create_user(user_data=user_data, db=db)
 
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=response.model_dump())
+
+@app.get("/{user_id}")
+async def get_user_data(user_id: str, db: Annotated[Session, Depends(get_db)]):
+    response = await user_service.get_user_data(id=user_id, db=db)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content=response.model_dump())
 
 
 @app.post("/login")

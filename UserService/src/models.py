@@ -5,10 +5,6 @@ from typing import Optional
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, MapperEvents, mapped_column
 import uuid
-from uuid import UUID
-from enum import Enum
-
-from sqlalchemy.util import unique_list
 
 # module import 
 from src.database import Base
@@ -17,7 +13,7 @@ from src.database import Base
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid.uuid4(), unique=True)
+    id: Mapped[str] = mapped_column(primary_key=True, default=lambda: str(uuid.uuid4()), unique=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(225), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(225), nullable=False)

@@ -1,6 +1,7 @@
 #python import
 
 # library import 
+from uuid import UUID
 from fastapi import status, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,7 +9,7 @@ from pwdlib import PasswordHash
 
 
 # module import
-from src.schemas import CreateUserSchema, UserPreferenceSchema, UserResponse, LoginSchema
+from src.schemas import CreateUserSchema, UserDataResponse, UserPreferenceSchema, UserResponse, LoginSchema
 from src.models import User
 from src.utils import generate_token
 
@@ -70,11 +71,8 @@ class UserService:
     async def handle_login(self, user_data:LoginSchema, db: Session) -> UserResponse:
         user = db.scalars(select(User).where(User.email == user_data.email)).first()
 
-        if not user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="use does not exist")
-
-        if not self.verify_password(user_data.password, user.password):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
+        if not user or not self.verify_password(user_data.password, user.password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email or password")
 
         payload = {
                 "sub": str(user.id),
@@ -94,6 +92,19 @@ class UserService:
                 )
 
         return response
+
+    
+    async def get_user_data(self, id: str, db: Session):
+        user = db.scalars(select(User).where(User.id == id)).first()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        response = UserDataResponse.model_validate(user)
+
+        return response
+
+
 
 
 user_service = UserService()
