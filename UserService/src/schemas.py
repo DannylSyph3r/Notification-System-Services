@@ -2,7 +2,7 @@
 from typing import Literal, Optional
 
 # library import 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 # module import
 
@@ -32,3 +32,14 @@ class UserResponse(UserSchema):
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserDataResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    email: EmailStr
+    push_token: str | None
+    email_notification: bool
+    push_notification: bool
