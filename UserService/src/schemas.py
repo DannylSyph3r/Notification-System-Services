@@ -28,3 +28,7 @@ class TokenResponse(BaseModel):
 class UserResponse(UserSchema):
     id: str
     access_token: TokenResponse
+
+class LoginSchema(BaseModel):
+    email: EmailStr
+    password: str
