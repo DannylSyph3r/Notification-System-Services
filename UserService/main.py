@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 import uvicorn
 
 # module import 
-from src.schemas import CreateUserSchema
+from src.schemas import CreateUserSchema, LoginSchema
 from src.database import get_db, Base, engine
 from src.service import user_service
 
@@ -23,6 +23,12 @@ async def create_user(user_data: CreateUserSchema, db: Annotated[Session, Depend
 
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=response.model_dump())
 
+
+@app.post("/login")
+async def login(user_data: LoginSchema, db: Annotated[Session, Depends(get_db)]):
+    response = await user_service.handle_login(user_data=user_data, db=db)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content=response.model_dump())
 
 @app.get("/health")
 async def health_check():
