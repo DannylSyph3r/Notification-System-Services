@@ -1,4 +1,4 @@
-const firebaseConfig = {};
+const firebaseConfig = __FIREBASE_CONFIG_JSON_PLACEHOLDER__;
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
@@ -17,7 +17,7 @@ permissionButton.addEventListener('click', async () => {
             console.log('Notification permission granted.');
             permissionStatus.textContent = 'Status: Granted';
             permissionStatus.style.color = 'green';
-            await getToken(); // [cite: 2249]
+            await getToken();
         } else {
             console.warn('Notification permission denied.');
             permissionStatus.textContent = 'Status: Denied';
@@ -32,7 +32,7 @@ permissionButton.addEventListener('click', async () => {
 
 async function getToken() {
     try {
-        const vapidKey = "";
+        const vapidKey = "__FIREBASE_VAPID_KEY_PLACEHOLDER__";
 
         const currentToken = await messaging.getToken({ vapidKey: vapidKey });
 
@@ -51,7 +51,6 @@ async function getToken() {
 messaging.onMessage((payload) => {
     console.log('Message received in foreground:', payload);
 
-    // Remove placeholder
     const placeholder = document.querySelector('.placeholder');
     if (placeholder) {
         placeholder.remove();
@@ -74,7 +73,6 @@ messaging.onMessage((payload) => {
 
 copyButton.addEventListener('click', () => {
     if (!navigator.clipboard) {
-        // Fallback for older browsers [cite: 2266]
         tokenText.select();
         document.execCommand('copy');
         alert('Token copied to clipboard (fallback).');

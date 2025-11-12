@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+
+  # -------------------------------------
+  # Infrastructure Services
+  # -------------------------------------
+
+  postgres-user:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      # Port 5432 is for the User Service
+      - "5432:5432"
+    volumes:
+      - user-data:/var/lib/postgresql/data
+
+  postgres-template:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: template_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      # Port 5433 is for the Template Service (your service)
+      - "5433:5432"
+    volumes:
+      - template-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"  # AMQP port
+      - "15672:15672" # Management UI port
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  # -------------------------------------
+  # Application Services
+  # -------------------------------------
+
+  api-gateway:
+    # This service will be built from its own Dockerfile
+    build: ./api-gateway # Assumes an 'api-gateway' folder
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      JWT_SECRET: your-secret-key
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      USER_SERVICE_URL: http://user-service:5000
+      TEMPLATE_SERVICE_URL: http://template-service:3001
+    depends_on:
+      - redis
+      - rabbitmq
+      - user-service
+      - template-service
+
+  user-service:
+    build: ./user-service # Assumes a 'user-service' folder
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgresql://user:password@postgres-user:5432/user_db
+      REDIS_HOST: redis
+      JWT_SECRET: your-secret-key
+    depends_on:
+      - postgres-user
+      - redis
+
+  template-service:
+    build: ./template-service # This is YOUR service folder
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://user:password@postgres-template:5432/template_db
+      REDIS_HOST: redis
+    depends_on:
+      - postgres-template
+      - redis
+
+  email-service:
+    build: ./email-service # Assumes an 'email-service' folder
+    environment:
+      PORT: 3002
+      RABBITMQ_HOST: rabbitmq
+      BREVO_API_KEY: your-api-key # You must provide this
+      TEMPLATE_SERVICE_URL: http://template-service:3001
+      REDIS_HOST: redis
+    depends_on:
+      - rabbitmq
+      - redis
+      - template-service
+
+  push-service:
+    build: ./push-service # Assumes a 'push-service' folder
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      RABBITMQ_HOST: rabbitmq
+      FIREBASE_PROJECT_ID: your-project-id # You must provide this
+      TEMPLATE_SERVICE_URL: http://template-service:3001
+      REDIS_HOST: redis
+    depends_on:
+      - rabbitmq
+      - redis
+      - template-service
+
+# -------------------------------------
+# Volumes
+# -------------------------------------
+
+volumes:
+  user-data:
+  template-data:
+  redis-data:
+  rabbitmq-data:

@@ -1,18 +1,24 @@
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Copy Maven wrapper files and pom.xml
+ARG FIREBASE_CONFIG_JSON
+ARG FIREBASE_VAPID_KEY
+
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Download dependencies
 RUN ./mvnw dependency:go-offline
 
-# Copy source code
 COPY src ./src
 
-# Build the application
+RUN cp src/main/resources/static/app-example.js src/main/resources/static/app.js && \
+    cp src/main/resources/static/firebase-messaging-sw-example.js src/main/resources/static/firebase-messaging-sw.js
+
+RUN sed -i "s|__FIREBASE_CONFIG_JSON_PLACEHOLDER__|${FIREBASE_CONFIG_JSON}|g" src/main/resources/static/app.js && \
+    sed -i "s|__FIREBASE_VAPID_KEY_PLACEHOLDER__|${FIREBASE_VAPID_KEY}|g" src/main/resources/static/app.js && \
+    sed -i "s|__FIREBASE_CONFIG_JSON_PLACEHOLDER__|${FIREBASE_CONFIG_JSON}|g" src/main/resources/static/firebase-messaging-sw.js
+
 RUN ./mvnw clean package -DskipTests
 
 # Create the final production image

@@ -1,14 +1,8 @@
-#python import
-
-# library import 
 from fastapi import status, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pwdlib import PasswordHash
-
-
-# module import
-from src.schemas import CreateUserSchema, UserDataResponse, UserPreferenceSchema, UserResponse, LoginSchema
+from src.schemas import CreateUserSchema, UserDataResponse, UserPreferencesSchema, UserResponse, LoginSchema, LoginResponseSchema, UserContactInfo
 from src.models import User
 from src.utils import generate_token
 
@@ -24,7 +18,7 @@ class UserService:
         return self.password_hasher.verify(password, hashed_password)
 
 
-    async def create_user(self, user_data: CreateUserSchema, db: Session) -> UserResponse:
+    async def create_user(self, user_data: CreateUserSchema, db: Session) -> LoginResponseSchema:
         existing = db.scalars(select(User).where(User.email == user_data.email)).first()
 
         if existing:
@@ -44,51 +38,36 @@ class UserService:
         db.commit()
         db.refresh(new_user)
 
-        # create access token
         payload = {
-                "sub": str(new_user.id),
+                "user_id": str(new_user.id),
                 "email": new_user.email,
-                "push_token": new_user.push_token
                 }
-        token = await generate_token(payload, expire_delta=30)
+        token_response = await generate_token(payload, expire_delta=1440)
 
-
-        response = UserResponse(
-                id=str(new_user.id),
-                name=new_user.name,
-                email=new_user.email,
-                push_token=new_user.push_token,
-                preferences=UserPreferenceSchema(
-                    email=new_user.email_notification,
-                    push=new_user.push_notification
-                    ),
-                access_token=token
+        response = LoginResponseSchema(
+                user_id=str(new_user.id),
+                token=token_response.token
                 )
 
         return response
 
 
-    async def handle_login(self, user_data:LoginSchema, db: Session) -> UserResponse:
+    async def handle_login(self, user_data:LoginSchema, db: Session) -> LoginResponseSchema:
         user = db.scalars(select(User).where(User.email == user_data.email)).first()
 
         if not user or not self.verify_password(user_data.password, user.password):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email or password")
 
         payload = {
-                "sub": str(user.id),
+                "user_id": str(user.id), 
                 "email": user.email,
-                "push_token": user.push_token
                 }
 
-        access_token = await generate_token(payload=payload, expire_delta=30)
+        token_response = await generate_token(payload=payload, expire_delta=1440)
 
-        response = UserResponse(
-                id=str(user.id),
-                name=user.name,
-                email=user.email,
-                push_token=user.push_token,
-                preferences=UserPreferenceSchema(email=user.email_notification, push=user.push_notification),
-                access_token=access_token
+        response = LoginResponseSchema(
+                user_id=str(user.id),
+                token=token_response.token
                 )
 
         return response
@@ -105,6 +84,29 @@ class UserService:
         return response
 
 
+    async def get_user_preferences(self, id: str, db: Session) -> UserPreferencesSchema:
+        user = db.scalars(select(User).where(User.id == id)).first()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return UserPreferencesSchema(
+            email=user.email_notification,
+            push=user.push_notification
+        )
+
+
+
+    async def get_user_contact_info(self, id: str, db: Session) -> UserContactInfo:
+        user = db.scalars(select(User).where(User.id == id)).first()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return UserContactInfo(
+            email=user.email,
+            push_token=user.push_token
+        )
 
 
 user_service = UserService()

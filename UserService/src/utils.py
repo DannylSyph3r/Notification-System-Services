@@ -1,17 +1,16 @@
-# python import
 import os
 from datetime import datetime, time, timedelta, timezone
-
-# library import
+import base64
 import jwt
 from dotenv import load_dotenv
-
-# module import
 from src.schemas import TokenResponse
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "your secret key")
+
+SECRET_KEY_ENCODED = os.getenv("SECRET_KEY", "your secret key")
+SECRET_KEY = base64.b64decode(SECRET_KEY_ENCODED)
+
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
@@ -31,4 +30,3 @@ async def generate_token(payload: dict, expire_delta: int | None = None) -> Toke
     token_response = TokenResponse(token=encoded_token)
 
     return token_response
-

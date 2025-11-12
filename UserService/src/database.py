@@ -1,11 +1,7 @@
-# python import
 import os
-
-# library import 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from dotenv import load_dotenv
-# module import
 
 load_dotenv()
 
