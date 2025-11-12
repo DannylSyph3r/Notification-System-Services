@@ -49,12 +49,12 @@ public class UserService {
 
 
     public JsonNode registerUser(RegisterRequest request) {
-        String url = userServiceUrl + "/api/v1/auth/register";
+        String url = userServiceUrl + "/";
         return restTemplate.postForObject(url, request, JsonNode.class);
     }
 
     public JsonNode loginUser(LoginRequest request) {
-        String url = userServiceUrl + "/api/v1/auth/login";
+        String url = userServiceUrl + "/login";
         return restTemplate.postForObject(url, request, JsonNode.class);
     }
 
@@ -121,11 +121,9 @@ public class UserService {
 
         // 1. Check cache
         try {
-            // Get the value as a JSON String
             String cachedJson = (String) redisTemplate.opsForValue().get(key);
             if (cachedJson != null && !cachedJson.isEmpty()) {
                 log.info("[{}] User contact found in cache for user {}", correlationId, userId);
-                // Convert from JSON String back to our DTO
                 return objectMapper.readValue(cachedJson, CONTACT_TYPE_REFERENCE);
             }
         } catch (Exception e) {
@@ -148,7 +146,6 @@ public class UserService {
 
             // 3. Store in cache
             if (contact != null) {
-                // Convert our DTO to a JSON String before saving
                 String jsonToCache = objectMapper.writeValueAsString(contact);
                 redisTemplate.opsForValue().set(key, jsonToCache, CACHE_TTL);
             }
