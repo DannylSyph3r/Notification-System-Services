@@ -23,18 +23,13 @@ async def create_user(user_data: CreateUserSchema, db: Annotated[Session, Depend
 
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=response.model_dump())
 
-@app.get("/{user_id}")
-async def get_user_data(user_id: str, db: Annotated[Session, Depends(get_db)]):
-    response = await user_service.get_user_data(id=user_id, db=db)
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content=response.model_dump())
-
 
 @app.post("/login")
 async def login(user_data: LoginSchema, db: Annotated[Session, Depends(get_db)]):
     response = await user_service.handle_login(user_data=user_data, db=db)
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=response.model_dump())
+
 
 @app.get("/health")
 async def health_check():
@@ -44,6 +39,13 @@ async def health_check():
             }
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=response)
+
+
+@app.get("/{user_id}")
+async def get_user_data(user_id: str, db: Annotated[Session, Depends(get_db)]):
+    response = await user_service.get_user_data(id=user_id, db=db)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content=response.model_dump())
 
 
 if __name__ == "__main__":

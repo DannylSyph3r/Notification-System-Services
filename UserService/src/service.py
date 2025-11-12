@@ -1,7 +1,6 @@
 #python import
 
 # library import 
-from uuid import UUID
 from fastapi import status, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -12,7 +11,6 @@ from pwdlib import PasswordHash
 from src.schemas import CreateUserSchema, UserDataResponse, UserPreferenceSchema, UserResponse, LoginSchema
 from src.models import User
 from src.utils import generate_token
-from rabbitmq_app.producer import channel_message
 
 class UserService:
 
@@ -53,9 +51,6 @@ class UserService:
                 "push_token": new_user.push_token
                 }
         token = await generate_token(payload, expire_delta=30)
-
-        # add a message queue for created user
-        channel_message(queue="user_registration", body="User was registered successfully")
 
 
         response = UserResponse(
