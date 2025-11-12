@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-const firebaseConfig = {};
+const firebaseConfig = __FIREBASE_CONFIG_JSON_PLACEHOLDER__;
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
