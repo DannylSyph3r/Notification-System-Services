@@ -7,7 +7,6 @@ Dockerfile
 
 # Maven build artifacts
 target/
-.mvn/
 
 # IDE files
 .idea/
