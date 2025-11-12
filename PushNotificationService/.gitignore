@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Customs ###
+src/main/resources/firebase-service-account.json
+src/main/resources/static/app.js
+src/main/resources/static/firebase-messaging-sw.js

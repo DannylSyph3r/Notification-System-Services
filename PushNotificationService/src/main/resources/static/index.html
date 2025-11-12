@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Notification Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>Push Notification Demo</h1>
+    <p>Test client for the Push Notification Service.</p>
+
+    <div class="section">
+        <button id="request-permission">1. Enable Notifications</button>
+        <span id="permission-status">Status: Not Granted</span>
+    </div>
+
+    <div class="section" id="token-section" style="display: none;">
+        <h3>2. Your Device Token</h3>
+        <p>Copy this token and add it to your user profile via the API Gateway's `register` or `update user` endpoint.</p>
+        <textarea id="device-token" rows="5" readonly></textarea>
+        <button id="copy-token">Copy Token</button>
+    </div>
+
+    <div class="section">
+        <h3>3. Received Notifications (Foreground)</h3>
+        <ul id="notification-list">
+            <li class="placeholder">Waiting for messages...</li>
+        </ul>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+
+<script src="app.js"></script>
+
+</body>
+</html>
