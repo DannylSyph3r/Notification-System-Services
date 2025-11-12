@@ -1,0 +1,29 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  MaxLength,
+} from 'class-validator';
+
+export class CreateTemplateDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  template_code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  subject?: string;
+
+  @IsArray()
+  @IsString({ each: true }) // We validate that each item in the array is a string
+  @IsOptional()
+  variables?: string[];
+}
+
