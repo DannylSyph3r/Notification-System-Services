@@ -1,0 +1,20 @@
+Dockerfile
+.dockerignore
+
+# Git specific
+.git
+.gitignore
+
+# Maven build artifacts
+target/
+.mvn/
+
+# IDE files
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+
+# Other
+*.md
