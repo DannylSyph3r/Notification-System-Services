@@ -3,8 +3,8 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as amqp from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
-import { EmailNotificationService } from '../services/email-notification.service.js';
-import { NotificationMessageDto } from '../dto/notification-message.dto.js';
+import { EmailNotificationService } from '../services/email-notification.service';
+import { NotificationMessageDto } from '../dto/notification-message.dto';
 
 @Injectable()
 export class EmailNotificationConsumer implements OnModuleInit {

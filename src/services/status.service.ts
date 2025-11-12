@@ -1,9 +1,9 @@
 // src/services/status.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import pkg from 'ioredis';
-const { default: Redis } = pkg; // ✅ ESM-compatible import
-import { StatusUpdateDto } from '../dto/status-update.dto.js';
+import Redis from 'ioredis';
+// const { default: Redis } = pkg; // ✅ ESM-compatible import.... Import works now
+import { StatusUpdateDto } from '../dto/status-update.dto';
 
 @Injectable()
 export class StatusService {

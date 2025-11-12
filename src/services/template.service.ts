@@ -3,10 +3,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { TemplateDataDto } from '../dto/template-data.dto.js';
-import pkg from 'ioredis';
-const { default: Redis } = pkg; // ESM-compatible import
-import { TemplateNotFoundException } from '../exceptions/template-not-found.exception.js';
+import { TemplateDataDto } from '../dto/template-data.dto';
+import Redis from 'ioredis';
+// const { default: Redis } = pkg; // ESM-compatible import.....Import works now(changed to ESNext in tsconfig.json)
+import { TemplateNotFoundException } from '../exceptions/template-not-found.exception';
 
 @Injectable()
 export class TemplateService {

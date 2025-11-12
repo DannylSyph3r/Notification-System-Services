@@ -3,28 +3,28 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 
 // Configs
-import rabbitmqConfig from './config/rabbitmq.config.js';
-import redisConfig from './config/redis.config.js';
-import brevoConfig from './config/brevo.config.js';
+import rabbitmqConfig from './config/rabbitmq.config';
+import redisConfig from './config/redis.config';
+
 
 // Consumers
-import { EmailNotificationConsumer } from './consumers/email-notification.consumer.js';
+import { EmailNotificationConsumer } from './consumers/email-notification.consumer';
 
 // Services
-import { EmailNotificationService } from './services/email-notification.service.js';
-import { BrevoEmailService } from './services/brevo-email.service.js';
-import { TemplateService } from './services/template.service.js';
-import { StatusService } from './services/status.service.js';
-import { HealthCheckService } from './services/health-check.service.js';
+import { EmailNotificationService } from './services/email-notification.service';
+import { SendGridService } from './services/sendgrid.service'; // ✅
+import { TemplateService } from './services/template.service';
+import { StatusService } from './services/status.service';
+import { HealthCheckService } from './services/health-check.service';
 
 // Controllers
-import { HealthController } from './controllers/health.controller.js';
+import { HealthController } from './controllers/health.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [rabbitmqConfig, redisConfig, brevoConfig],
+      load: [rabbitmqConfig, redisConfig],
       envFilePath: ['.env'], // ensures local .env is loaded in dev
     }),
     HttpModule.register({
@@ -36,7 +36,7 @@ import { HealthController } from './controllers/health.controller.js';
   providers: [
     EmailNotificationConsumer,
     EmailNotificationService,
-    BrevoEmailService,
+    SendGridService,
     TemplateService,
     StatusService,
     HealthCheckService,

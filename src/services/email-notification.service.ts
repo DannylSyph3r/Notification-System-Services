@@ -1,20 +1,18 @@
 // src/services/email-notification.service.ts
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationMessageDto } from '../dto/notification-message.dto.js';
-import { BrevoEmailService } from './brevo-email.service.js';
-import { TemplateService } from './template.service.js';
-import { StatusService } from './status.service.js';
-import { EmailPayloadDto } from '../dto/email-payload.dto.js';
-import { fillTemplate } from '../utils/template-filler.util.js';
-import { BrevoException } from '../exceptions/brevo.exception.js';
-import { TemplateNotFoundException } from '../exceptions/template-not-found.exception.js';
+import { NotificationMessageDto } from '../dto/notification-message.dto';
+import { SendGridService } from './sendgrid.service';
+import { TemplateService } from './template.service';
+import { StatusService } from './status.service';
+import { TemplateNotFoundException } from '../exceptions/template-not-found.exception';
+import { fillTemplate } from '../utils/template-filler.util';
 
 @Injectable()
 export class EmailNotificationService {
   private readonly logger = new Logger(EmailNotificationService.name);
 
   constructor(
-    private readonly brevoService: BrevoEmailService,
+    private readonly sendGridService: SendGridService,
     private readonly templateService: TemplateService,
     private readonly statusService: StatusService,
   ) {}
@@ -48,38 +46,28 @@ export class EmailNotificationService {
     }
 
     const emailSubject = fillTemplate(template.subject, variables); // 4. Replace variables in subject
-    const emailBody = fillTemplate(template.content, variables); // 5. Replace variables in body
+    const emailBody = fillTemplate(template.content, variables);     // 5. Replace variables in body
 
-    // 6. Build email payload
-    const payload: EmailPayloadDto = {
-      to: user_contact.email,
-      subject: emailSubject,
-      htmlContent: emailBody,
-      textContent: this.stripHtml(emailBody),
-    };
-
-    // 7. Send via Brevo
+    // 6. Send via SendGrid
     try {
-      await this.brevoService.sendEmail(payload);
-      // 8. Update status as delivered
+      await this.sendGridService.sendMail(user_contact.email, emailSubject, emailBody);
+      // 7. Update status as delivered
       await this.statusService.updateStatus(notification_id, 'delivered', null);
       this.logger.log(`[${correlation_id}] Email sent successfully`);
     } catch (error: any) {
-      // 9. Log and throw Brevo exception
-      if (error instanceof BrevoException) {
-        this.logger.error(`[${correlation_id}] Failed to send email via Brevo: ${error.message}`);
-        await this.statusService.updateStatus(notification_id, 'failed', error.message);
-      }
+      // 8. Log and mark as failed
+      this.logger.error(`[${correlation_id}] Failed to send email via SendGrid: ${error.message}`);
+      await this.statusService.updateStatus(notification_id, 'failed', error.message);
       throw error;
     }
   }
 
-  // 10. Update status manually as failed
+  // 9. Update status manually as failed
   async updateStatusAsFailed(notificationId: string, error: string) {
     await this.statusService.updateStatus(notificationId, 'failed', error);
   }
 
-  // 11. Utility: Strip HTML tags for text version
+  // 10. Utility: Strip HTML tags for text version
   private stripHtml(html: string): string {
     return html.replace(/<[^>]*>/g, '');
   }

@@ -1,6 +1,6 @@
 // src/controllers/health.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { HealthCheckService } from '../services/health-check.service.js';
+import { HealthCheckService } from '../services/health-check.service';
 
 @Controller('health')
 export class HealthController {

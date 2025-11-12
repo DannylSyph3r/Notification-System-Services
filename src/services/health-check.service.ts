@@ -1,10 +1,9 @@
 // src/services/health-check.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import pkg from 'ioredis';
-const { default: Redis } = pkg; // ✅ Works with ESM
+import Redis from 'ioredis';
 import * as amqp from 'amqplib';
-import { BrevoEmailService } from './brevo-email.service.js';
+import { SendGridService } from './sendgrid.service';
 
 @Injectable()
 export class HealthCheckService {
@@ -13,9 +12,8 @@ export class HealthCheckService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly brevoService: BrevoEmailService,
+    private readonly sendGridService: SendGridService, // ✅ Use SendGrid instead of Brevo
   ) {
-    // ✅ Proper initialization for ESM
     this.redis = new Redis({
       host: this.configService.get<string>('redis.host') || 'localhost',
       port: parseInt(this.configService.get<string>('redis.port') || '6379'),
@@ -49,16 +47,19 @@ export class HealthCheckService {
       this.logger.error(`RabbitMQ connection failed: ${err.message}`);
     }
 
-    // 3. Brevo
+    // 3. SendGrid
     try {
-      const connected = await this.brevoService.verifyConnection();
-      services.brevo = connected ? 'connected' : 'disconnected';
+      // We can do a quick test by sending to our own address or just check env variables
+      const testEmail = this.configService.get<string>('FROM_EMAIL');
+      services.sendgrid = testEmail ? 'ready' : 'disconnected';
     } catch (err: any) {
-      services.brevo = 'disconnected';
-      this.logger.error(`Brevo connection failed: ${err.message}`);
+      services.sendgrid = 'disconnected';
+      this.logger.error(`SendGrid check failed: ${err.message}`);
     }
 
-    const allConnected = Object.values(services).every(status => status === 'connected');
+    const allConnected = Object.values(services).every(
+      status => status === 'connected' || status === 'ready'
+    );
     const status = allConnected ? 'healthy' : 'degraded';
 
     return {
