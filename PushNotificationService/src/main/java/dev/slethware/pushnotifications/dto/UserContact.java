@@ -1,0 +1,15 @@
+package dev.slethware.pushnotifications.dto;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
+
+@Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UserContact {
+
+    private String email;
+
+    @JsonProperty("push_token")
+    private String pushToken;
+}
