@@ -1,12 +1,7 @@
-# python import
 import os
 from datetime import datetime, time, timedelta, timezone
-
-# library import
 import jwt
 from dotenv import load_dotenv
-
-# module import
 from src.schemas import TokenResponse
 
 load_dotenv()
