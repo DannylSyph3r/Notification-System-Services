@@ -1,12 +1,7 @@
-# python import
-
-# library import 
 from typing import Optional
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, MapperEvents, mapped_column
 import uuid
-
-# module import 
 from src.database import Base
 
 
@@ -17,7 +12,7 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(225), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(225), nullable=False)
-    push_token: Mapped[Optional[str]] = mapped_column(String(225), unique=True)
+    push_token: Mapped[Optional[str]] = mapped_column(String(225))
     email_notification: Mapped[bool] = mapped_column(Boolean, default=False)
     push_notification: Mapped[bool] = mapped_column(Boolean, default=False)
 
