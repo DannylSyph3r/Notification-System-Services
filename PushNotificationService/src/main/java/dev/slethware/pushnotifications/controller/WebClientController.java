@@ -12,11 +12,6 @@ import java.nio.charset.StandardCharsets;
 @Controller
 public class WebClientController {
 
-    @GetMapping("/")
-    public String index() {
-        return "index.html";
-    }
-
     @GetMapping(value = "/firebase-messaging-sw.js", produces = "application/javascript")
     public ResponseEntity<String> serviceWorker() throws IOException {
         ClassPathResource resource = new ClassPathResource("static/firebase-messaging-sw.js");
