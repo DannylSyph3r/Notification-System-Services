@@ -21,11 +21,11 @@ RUN sed -i "s|__FIREBASE_CONFIG_JSON_PLACEHOLDER__|${FIREBASE_CONFIG_JSON}|g" sr
 
 RUN ./mvnw clean package -DskipTests
 
-# Create the final production image
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy the built JAR from the build stage
+RUN apk add --no-cache curl
+
 COPY --from=build /app/target/pushnotifications-*.jar app.jar
 
 EXPOSE 8082

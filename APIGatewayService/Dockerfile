@@ -20,6 +20,8 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+RUN apk add --no-cache curl
+
 # Copy JAR from build stage
 COPY --from=build /app/target/apigateway-*.jar app.jar
 
