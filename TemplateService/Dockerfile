@@ -1,44 +1,37 @@
-# --- Stage 1: Build Stage ---
-# Use a Node.js 20 Alpine image as the base for building the app
+# Stage 1: Build
 FROM node:20-alpine AS build
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies)
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
-# Copy the rest of the source code
 COPY . .
 
-# Build the TypeScript application
 RUN npm run build
 
-# --- Stage 2: Production Stage ---
-# Use a slim Node.js 20 Alpine image for the final container
+# Stage 2: Production
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install *only* production dependencies
-RUN npm ci --only=production
+RUN npm install --production --legacy-peer-deps
 
-# Copy the built application from the 'build' stage
+# Copy compiled application
 COPY --from=build /app/dist ./dist
 
-# Copy migrations and TypeORM config
-COPY migrations ./migrations
-COPY ormconfig.ts ./
+# Copy source migrations (needed for typeorm-ts-node-commonjs)
+COPY --from=build /app/src/migrations ./src/migrations
 
-# Expose the port the application will run on
+# Copy ormconfig
+COPY --from=build /app/ormconfig.ts ./
+
+# Install ts-node for running migrations
+RUN npm install --save-dev ts-node @types/node --legacy-peer-deps
+
 EXPOSE 3001
 
-# Command to run migrations and then start the application
-# We use npm run migration:run (from package.json) and then start the app
-CMD ["sh", "-c", "npm run migration:run && node dist/main"]
+CMD ["sh", "-c", "npm run migration:run && node dist/src/main.js"]

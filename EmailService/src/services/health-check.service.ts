@@ -1,4 +1,3 @@
-// src/services/health-check.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
@@ -8,57 +7,45 @@ import { SendGridService } from './sendgrid.service';
 @Injectable()
 export class HealthCheckService {
   private readonly logger = new Logger(HealthCheckService.name);
-  private redis: InstanceType<typeof Redis>;
+  private redis: Redis;
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly sendGridService: SendGridService, // ✅ Use SendGrid instead of Brevo
+    private readonly sendGridService: SendGridService,
   ) {
     this.redis = new Redis({
-      host: this.configService.get<string>('redis.host') || 'localhost',
-      port: parseInt(this.configService.get<string>('redis.port') || '6379'),
+      host: this.configService.get<string>('REDIS_HOST') || 'redis',
+      port: parseInt(this.configService.get<string>('REDIS_PORT') || '6379', 10),
     });
   }
 
   async checkHealth() {
     const services: Record<string, string> = {};
 
-    // 1. Redis
     try {
       await this.redis.ping();
       services.redis = 'connected';
-    } catch (err: any) {
+    } catch (error) {
       services.redis = 'disconnected';
-      this.logger.error(`Redis connection failed: ${err.message}`);
     }
 
-    // 2. RabbitMQ
     try {
-      const host = this.configService.get<string>('rabbitmq.host') || 'localhost';
-      const port = parseInt(this.configService.get<string>('rabbitmq.port') || '5672');
-      const user = this.configService.get<string>('rabbitmq.user') || 'guest';
-      const pass = this.configService.get<string>('rabbitmq.password') || 'guest';
+      const rabbitHost = this.configService.get<string>('RABBITMQ_HOST') || 'rabbitmq';
+      const rabbitPort = this.configService.get<string>('RABBITMQ_PORT') || '5672';
+      const rabbitUser = this.configService.get<string>('RABBITMQ_USER') || 'guest';
+      const rabbitPass = this.configService.get<string>('RABBITMQ_PASSWORD') || 'guest';
 
-      const connection = await amqp.connect(`amqp://${user}:${pass}@${host}:${port}`);
+      const connection = await amqp.connect(
+        `amqp://${rabbitUser}:${rabbitPass}@${rabbitHost}:${rabbitPort}`,
+      );
       await connection.close();
       services.rabbitmq = 'connected';
-    } catch (err: any) {
+    } catch (error) {
       services.rabbitmq = 'disconnected';
-      this.logger.error(`RabbitMQ connection failed: ${err.message}`);
-    }
-
-    // 3. SendGrid
-    try {
-      // We can do a quick test by sending to our own address or just check env variables
-      const testEmail = this.configService.get<string>('FROM_EMAIL');
-      services.sendgrid = testEmail ? 'ready' : 'disconnected';
-    } catch (err: any) {
-      services.sendgrid = 'disconnected';
-      this.logger.error(`SendGrid check failed: ${err.message}`);
     }
 
     const allConnected = Object.values(services).every(
-      status => status === 'connected' || status === 'ready'
+      (status) => status === 'connected',
     );
     const status = allConnected ? 'healthy' : 'degraded';
 
