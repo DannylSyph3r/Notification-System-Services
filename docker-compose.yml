@@ -17,6 +17,22 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-template:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB_TEMPLATE}
+      POSTGRES_USER: ${POSTGRES_USER_TEMPLATE}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_TEMPLATE}
+    ports:
+      - "5433:5432" # Runs on host port 5433 to avoid conflict with postgres-user
+    volumes:
+      - template-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U${POSTGRES_USER_TEMPLATE} -d ${POSTGRES_DB_TEMPLATE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7-alpine
     ports:
@@ -63,6 +79,54 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  template-service:
+    build: ./TemplateService
+    environment:
+      DB_HOST: postgres-template
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER_TEMPLATE}
+      DB_PASSWORD: ${POSTGRES_PASSWORD_TEMPLATE}
+      DB_NAME: ${POSTGRES_DB_TEMPLATE}
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      postgres-template:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Note: A healthcheck can be added here once its /health endpoint is confirmed
+
+  email-service:
+    build: ./EmailService
+    ports:
+      - "3002:3002"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
+      RABBITMQ_EXCHANGE: notifications.direct
+      RABBITMQ_QUEUE_EMAIL: email.queue
+      RABBITMQ_ROUTING_KEY_EMAIL: email
+      
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      
+      TEMPLATE_SERVICE_URL: http://template-service:3001
+      MAX_RETRIES: 5
+      
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      template-service:
+        condition: service_started
 
   api-gateway:
     build: ./APIGatewayService
@@ -131,3 +195,4 @@ volumes:
   user-data:
   redis-data:
   rabbitmq-data:
+  template-data:
