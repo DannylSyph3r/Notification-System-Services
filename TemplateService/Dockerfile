@@ -26,20 +26,19 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# --- THIS IS THE FIX ---
-# Install prod deps AND ts-node (which is needed for ormconfig.ts) 
-RUN npm ci --only=production && npm install ts-node
+# Install *only* production dependencies
+RUN npm ci --only=production
 
 # Copy the built application from the 'build' stage
 COPY --from=build /app/dist ./dist
 
-# Copy migrations and TypeORM config from the build stage
-COPY --from=build /app/migrations ./migrations
-COPY --from=build /app/ormconfig.ts ./
+# Copy migrations and TypeORM config
+COPY migrations ./migrations
+COPY ormconfig.ts ./
 
-# Expose the port the application will run on [cite: 111, 151]
+# Expose the port the application will run on
 EXPOSE 3001
 
-# Command to run migrations and then start the application 
-# This will now work because ts-node is installed
+# Command to run migrations and then start the application
+# We use npm run migration:run (from package.json) and then start the app
 CMD ["sh", "-c", "npm run migration:run && node dist/main"]
