@@ -2,7 +2,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-// const { default: Redis } = pkg; // ✅ ESM-compatible import.... Import works now
 import { StatusUpdateDto } from '../dto/status-update.dto';
 
 @Injectable()
@@ -13,8 +12,10 @@ export class StatusService {
   constructor(private readonly configService: ConfigService) {
     // Initialize Redis safely
     this.redis = new Redis({
-      host: this.configService.get<string>('REDIS_HOST') || 'localhost',
-      port: parseInt(this.configService.get<string>('REDIS_PORT') || '6379'),
+      host: this.configService.get<string>('redis.host'),
+      port: this.configService.get<number>('redis.port'),
+      username: this.configService.get<string>('redis.username'),
+      password: this.configService.get<string>('redis.password'),
     });
   }
 

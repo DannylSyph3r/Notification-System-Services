@@ -14,8 +14,10 @@ export class HealthCheckService {
     private readonly sendGridService: SendGridService,
   ) {
     this.redis = new Redis({
-      host: this.configService.get<string>('REDIS_HOST') || 'redis',
-      port: parseInt(this.configService.get<string>('REDIS_PORT') || '6379', 10),
+      host: this.configService.get<string>('redis.host'),
+      port: this.configService.get<number>('redis.port'),
+      username: this.configService.get<string>('redis.username'),
+      password: this.configService.get<string>('redis.password'),
     });
   }
 
