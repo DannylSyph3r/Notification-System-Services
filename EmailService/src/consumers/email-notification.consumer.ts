@@ -32,7 +32,6 @@ export class EmailNotificationConsumer implements OnModuleInit {
     this.channelWrapper = this.connection.createChannel({
       json: true,
       setup: async (channel: Channel) => {
-        await channel.assertQueue(queue, { durable: true });
         await channel.prefetch(10);
 
         await channel.consume(

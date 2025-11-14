@@ -16,7 +16,6 @@ public class NotificationRequest {
     @JsonProperty("notification_type")
     private NotificationType notificationType;
 
-    @NotNull(message = "User ID is required")
     @JsonProperty("user_id")
     private UUID userId;
 
