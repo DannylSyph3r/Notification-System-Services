@@ -21,13 +21,27 @@ export class EmailNotificationConsumer implements OnModuleInit {
   }
 
   private async setupRabbitMQ() {
-    const host = this.configService.get('RABBITMQ_HOST');
-    const port = this.configService.get('RABBITMQ_PORT');
-    const user = this.configService.get('RABBITMQ_USER');
-    const pass = this.configService.get('RABBITMQ_PASSWORD');
+    // Use full URL if provided, otherwise fall back to individual components
+    const rabbitmqUrl = this.configService.get('RABBITMQ_URL');
+    
+    let connectionUrl: string;
+    
+    if (rabbitmqUrl) {
+      connectionUrl = rabbitmqUrl;
+      this.logger.log('Using full RabbitMQ URL');
+    } else {
+      // Fall back to individual components for backward compatibility
+      const host = this.configService.get('RABBITMQ_HOST');
+      const port = this.configService.get('RABBITMQ_PORT');
+      const user = this.configService.get('RABBITMQ_USER');
+      const pass = this.configService.get('RABBITMQ_PASSWORD');
+      connectionUrl = `amqp://${user}:${pass}@${host}:${port}`;
+      this.logger.log('Using individual RabbitMQ connection parameters');
+    }
+
     const queue = this.configService.get('RABBITMQ_QUEUE');
 
-    this.connection = amqp.connect([`amqp://${user}:${pass}@${host}:${port}`]);
+    this.connection = amqp.connect([connectionUrl]);
 
     this.channelWrapper = this.connection.createChannel({
       json: true,
@@ -77,7 +91,7 @@ export class EmailNotificationConsumer implements OnModuleInit {
     if (retryCount < maxRetries) {
       message.metadata.retry_count = retryCount + 1;
       this.logger.log(`[${message.correlation_id}] Will retry (attempt ${retryCount + 1}/${maxRetries})`);
-      channel.nack(msg, false, false); // goes to RabbitMQ retry or DLQ logic
+      channel.nack(msg, false, false);
     } else {
       this.logger.error(`[${message.correlation_id}] Max retries reached, moving to DLQ`);
       await this.emailService.updateStatusAsFailed(message.notification_id, error.message);

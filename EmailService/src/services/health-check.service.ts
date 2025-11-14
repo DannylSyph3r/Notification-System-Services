@@ -14,16 +14,17 @@ export class HealthCheckService {
     private readonly sendGridService: SendGridService,
   ) {
     this.redis = new Redis({
-      host: this.configService.get<string>('redis.host'),
-      port: this.configService.get<number>('redis.port'),
-      username: this.configService.get<string>('redis.username'),
-      password: this.configService.get<string>('redis.password'),
+      host: this.configService.get<string>('REDIS_HOST'),
+      port: this.configService.get<number>('REDIS_PORT'),
+      username: this.configService.get<string>('REDIS_USER'),
+      password: this.configService.get<string>('REDIS_PASSWORD'),
     });
   }
 
   async checkHealth() {
     const services: Record<string, string> = {};
 
+    // Check Redis
     try {
       await this.redis.ping();
       services.redis = 'connected';
@@ -31,15 +32,24 @@ export class HealthCheckService {
       services.redis = 'disconnected';
     }
 
+    // Check RabbitMQ
     try {
-      const rabbitHost = this.configService.get<string>('RABBITMQ_HOST') || 'rabbitmq';
-      const rabbitPort = this.configService.get<string>('RABBITMQ_PORT') || '5672';
-      const rabbitUser = this.configService.get<string>('RABBITMQ_USER') || 'guest';
-      const rabbitPass = this.configService.get<string>('RABBITMQ_PASSWORD') || 'guest';
+      // Use full URL if provided, otherwise fall back to individual components
+      const rabbitmqUrl = this.configService.get('RABBITMQ_URL');
+      
+      let connectionUrl: string;
+      
+      if (rabbitmqUrl) {
+        connectionUrl = rabbitmqUrl;
+      } else {
+        const host = this.configService.get('RABBITMQ_HOST') || 'rabbitmq';
+        const port = this.configService.get('RABBITMQ_PORT') || '5672';
+        const user = this.configService.get('RABBITMQ_USER') || 'guest';
+        const pass = this.configService.get('RABBITMQ_PASSWORD') || 'guest';
+        connectionUrl = `amqp://${user}:${pass}@${host}:${port}`;
+      }
 
-      const connection = await amqp.connect(
-        `amqp://${rabbitUser}:${rabbitPass}@${rabbitHost}:${rabbitPort}`,
-      );
+      const connection = await amqp.connect(connectionUrl);
       await connection.close();
       services.rabbitmq = 'connected';
     } catch (error) {
