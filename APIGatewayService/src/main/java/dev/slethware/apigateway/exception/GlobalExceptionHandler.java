@@ -1,5 +1,7 @@
 package dev.slethware.apigateway.exception;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.slethware.apigateway.dto.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -45,7 +47,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DuplicateRequestException.class)
     public ResponseEntity<ApiResponse<?>> handleDuplicateRequest(DuplicateRequestException ex) {
         log.warn("Duplicate request detected: {}", ex.getMessage());
-        // As per plan, return 200 OK with cached response
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(ex.getCachedResponse(), ex.getMessage()));
     }
@@ -60,9 +61,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<ApiResponse<?>> handleHttpClientError(HttpClientErrorException ex) {
         log.warn("HTTP client error from internal service: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
-        // Forward the error from the downstream service
+        
+        String errorMessage = extractErrorMessage(ex.getResponseBodyAsString());
+        
         return ResponseEntity.status(ex.getStatusCode())
-                .body(ApiResponse.error(ex.getStatusText(), ex.getResponseBodyAsString()));
+                .body(ApiResponse.error(getErrorType(ex.getStatusCode()), errorMessage));
     }
 
     @Override
@@ -86,5 +89,44 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("An unexpected error occurred: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Internal Server Error", "An unexpected error occurred."));
+    }
+
+    private String extractErrorMessage(String responseBody) {
+        if (responseBody == null || responseBody.isEmpty()) {
+            return "An error occurred";
+        }
+        
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(responseBody);
+            
+            if (jsonNode.has("detail")) {
+                return jsonNode.get("detail").asText();
+            }
+            
+            if (jsonNode.has("message")) {
+                return jsonNode.get("message").asText();
+            }
+            
+            return responseBody;
+            
+        } catch (Exception e) {
+            log.warn("Failed to parse error response body: {}", e.getMessage());
+            return responseBody;
+        }
+    }
+
+    private String getErrorType(HttpStatusCode statusCode) {
+        return switch (statusCode.value()) {
+            case 400 -> "Bad Request";
+            case 401 -> "Unauthorized";
+            case 403 -> "Forbidden";
+            case 404 -> "Not Found";
+            case 409 -> "Conflict";
+            case 422 -> "Validation Error";
+            case 500 -> "Internal Server Error";
+            case 503 -> "Service Unavailable";
+            default -> "Error";
+        };
     }
 }

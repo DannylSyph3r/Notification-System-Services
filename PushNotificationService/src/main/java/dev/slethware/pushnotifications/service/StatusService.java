@@ -1,5 +1,7 @@
 package dev.slethware.pushnotifications.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import dev.slethware.pushnotifications.dto.StatusUpdate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +30,12 @@ public class StatusService {
                 .build();
 
         try {
-            redisTemplate.opsForValue().set(key, statusUpdate, STATUS_TTL);
+            // Manually serialize to JSON string
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+            String jsonString = mapper.writeValueAsString(statusUpdate);
+            
+            redisTemplate.opsForValue().set(key, jsonString, STATUS_TTL);
             log.info("Updated status for {}: {}", notificationId, status);
         } catch (Exception e) {
             // Gracefully handle Redis failure
@@ -40,7 +47,17 @@ public class StatusService {
     public StatusUpdate getStatus(String notificationId) {
         String key = STATUS_KEY_PREFIX + notificationId;
         try {
-            return (StatusUpdate) redisTemplate.opsForValue().get(key);
+            String jsonString = (String) redisTemplate.opsForValue().get(key);
+            
+            if (jsonString == null || jsonString.isEmpty()) {
+                log.warn("Status not found for notification: {}", notificationId);
+                return null;
+            }
+ 
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+            return mapper.readValue(jsonString, StatusUpdate.class);
+            
         } catch (Exception e) {
             log.error("Failed to get status from Redis for {}: {}",
                     notificationId, e.getMessage(), e);
