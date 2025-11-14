@@ -1,4 +1,11 @@
-const firebaseConfig = __FIREBASE_CONFIG_JSON_PLACEHOLDER__;
+const firebaseConfig = {
+    apiKey: "AIzaSyDgnA8UropIZLxfjjhr6kbXz9IIGWRt23w",
+    authDomain: "notification-system-f8967.firebaseapp.com",
+    projectId: "notification-system-f8967",
+    storageBucket: "notification-system-f8967.firebasestorage.app",
+    messagingSenderId: "657011969631",
+    appId: "1:657011969631:web:d1f1039c4668cc72b5d5ea"
+};
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
@@ -32,7 +39,7 @@ permissionButton.addEventListener('click', async () => {
 
 async function getToken() {
     try {
-        const vapidKey = "__FIREBASE_VAPID_KEY_PLACEHOLDER__";
+        const vapidKey = "BBg0iJc0FVf9jG2PBnSTBrjtMATYbWb7q6gAl3ohKBWnnJN0Lz8vCkJE1mkhO3mTVTN4Fgda5b_RtZk9OEr09ys";
 
         const currentToken = await messaging.getToken({ vapidKey: vapidKey });
 
@@ -51,6 +58,7 @@ async function getToken() {
 messaging.onMessage((payload) => {
     console.log('Message received in foreground:', payload);
 
+    // Remove placeholder
     const placeholder = document.querySelector('.placeholder');
     if (placeholder) {
         placeholder.remove();
@@ -73,6 +81,7 @@ messaging.onMessage((payload) => {
 
 copyButton.addEventListener('click', () => {
     if (!navigator.clipboard) {
+        // Fallback for older browsers [cite: 2266]
         tokenText.select();
         document.execCommand('copy');
         alert('Token copied to clipboard (fallback).');
