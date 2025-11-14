@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -105,15 +107,28 @@ public class NotificationService {
 
     public StatusResponse getNotificationStatus(String notificationId) {
         String key = STATUS_KEY_PREFIX + notificationId;
-        StatusResponse status = (StatusResponse) redisTemplate.opsForValue().get(key);
-
-        if (status == null) {
-            log.warn("Notification status not found for ID: {}", notificationId);
+        
+        try {
+            // Get raw string from Redis
+            String jsonString = (String) redisTemplate.opsForValue().get(key);
+            
+            if (jsonString == null || jsonString.isEmpty()) {
+                log.warn("Notification status not found for ID: {}", notificationId);
+                throw new ResourceNotFoundException("Notification status not found");
+            }
+            
+            // Manually deserialize using ObjectMapper
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+            StatusResponse status = mapper.readValue(jsonString, StatusResponse.class);
+            
+            return status;
+        } catch (Exception e) {
+            log.error("Failed to deserialize status from Redis: {}", e.getMessage());
             throw new ResourceNotFoundException("Notification status not found");
         }
-        return status;
     }
-
+    
     private void storeStatus(String notificationId, String error) {
         String key = STATUS_KEY_PREFIX + notificationId;
         StatusResponse statusResponse = new StatusResponse(
@@ -123,7 +138,12 @@ public class NotificationService {
                 error
         );
         try {
-            redisTemplate.opsForValue().set(key, statusResponse, STATUS_TTL);
+            // Manually serialize to JSON string
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+            String jsonString = mapper.writeValueAsString(statusResponse);
+            
+            redisTemplate.opsForValue().set(key, jsonString, STATUS_TTL);
         } catch (Exception e) {
             log.error("Failed to store notification status in Redis: {}", e.getMessage());
         }
