@@ -11,6 +11,7 @@ export class CacheService {
     this.redis = new Redis({
       host: this.configService.get<string>('REDIS_HOST'),
       port: this.configService.get<number>('REDIS_PORT'),
+      username: this.configService.get<string>('REDIS_USER'),
       password: this.configService.get<string>('REDIS_PASSWORD'),
     });
 
