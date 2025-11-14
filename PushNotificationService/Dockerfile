@@ -12,13 +12,6 @@ RUN ./mvnw dependency:go-offline
 
 COPY src ./src
 
-RUN cp src/main/resources/static/app-example.js src/main/resources/static/app.js && \
-    cp src/main/resources/static/firebase-messaging-sw-example.js src/main/resources/static/firebase-messaging-sw.js
-
-RUN sed -i "s|__FIREBASE_CONFIG_JSON_PLACEHOLDER__|${FIREBASE_CONFIG_JSON}|g" src/main/resources/static/app.js && \
-    sed -i "s|__FIREBASE_VAPID_KEY_PLACEHOLDER__|${FIREBASE_VAPID_KEY}|g" src/main/resources/static/app.js && \
-    sed -i "s|__FIREBASE_CONFIG_JSON_PLACEHOLDER__|${FIREBASE_CONFIG_JSON}|g" src/main/resources/static/firebase-messaging-sw.js
-
 RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
